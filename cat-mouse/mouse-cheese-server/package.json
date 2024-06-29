@@ -1,0 +1,25 @@
+{
+  "name": "mouse-cheese-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.21",
+    "@types/ws": "^8.5.10",
+    "express": "^4.19.2",
+    "sockjs": "^0.3.24",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2",
+    "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "@types/sockjs": "^0.3.36"
+  }
+}

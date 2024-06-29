@@ -23,7 +23,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         const row = Math.floor(index / boardSize);
         const col = index % boardSize;
         return (
-          <div key={index} className={`w-12 h-12 ${currentPlayer === 'red' ? 'bg-red-100' : 'bg-blue-100'} flex items-center justify-center`}>
+          <div key={index} className={`w-12 h-12 ${currentPlayer === 'red' ? 'bg-red-100/50' : 'bg-blue-100'} flex items-center justify-center`}>
             {row === redMousePosition[0] && col === redMousePosition[1] && <Mouse color="red" />}
             {row === blueMousePosition[0] && col === blueMousePosition[1] && <Mouse color="blue" />}
             {row === cheesePosition[0] && col === cheesePosition[1] && <Cheese />}

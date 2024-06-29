@@ -2,56 +2,67 @@ import React, { useState, useEffect, useCallback } from 'react';
 import GameBoard from './components/GameBoard';
 import StatusDisplay from './components/StatusDisplay';
 
+interface GameState {
+  redMousePosition: [number, number];
+  blueMousePosition: [number, number];
+  cheesePosition: [number, number];
+  currentPlayer: 'red' | 'blue';
+  gameOver: boolean;
+  winner: 'red' | 'blue' | null;
+}
+
 const App: React.FC = () => {
-  const [boardSize] = useState(5);
-  const [redMousePosition, setRedMousePosition] = useState<[number, number]>([0, 0]);
-  const [blueMousePosition, setBlueMousePosition] = useState<[number, number]>([4, 4]);
-  const [cheesePosition, setCheesePosition] = useState<[number, number]>([2, 2]);
-  const [currentPlayer, setCurrentPlayer] = useState<'red' | 'blue'>('red');
-  const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState<'red' | 'blue' | null>(null);
-  const [gameStarted, setGameStarted] = useState(false);
+  const [gameState, setGameState] = useState<GameState>({
+    redMousePosition: [0, 0],
+    blueMousePosition: [4, 4],
+    cheesePosition: [2, 2],
+    currentPlayer: 'red',
+    gameOver: false,
+    winner: null
+  });
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
-  const startGame = () => {
-    setRedMousePosition([0, 0]);
-    setBlueMousePosition([4, 4]);
-    setCheesePosition(getRandomPosition());
-    setCurrentPlayer('red');
-    setGameOver(false);
-    setWinner(null);
-    setGameStarted(true);
-  };
+  useEffect(() => {
+    const newSocket = new WebSocket('ws://localhost:3000');
+    
+    newSocket.onopen = () => {
+      console.log('Connected to server');
+    };
 
-  const getRandomPosition = (): [number, number] => {
-    return [Math.floor(Math.random() * boardSize), Math.floor(Math.random() * boardSize)];
-  };
+    newSocket.onmessage = (event) => {
+      //console.log(event.data);
+      const newGameState = JSON.parse(event.data);
+      setGameState(newGameState);
+      // console.log(newGameState);
+      // console.log(newGameState.redMousePosition);
+    };
+
+    newSocket.onclose = () => {
+      console.log('Disconnected from server');
+    };
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, []);
+
+  const startGame = useCallback(() => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'START_GAME' }));
+    }
+  }, [socket]);
 
   const movePlayer = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    if (gameOver || !gameStarted) return;
-
-    const currentPosition = currentPlayer === 'red' ? redMousePosition : blueMousePosition;
-    let newPosition: [number, number] = [...currentPosition];
-
-    switch (direction) {
-      case 'up': newPosition[0] = Math.max(0, newPosition[0] - 1); break;
-      case 'down': newPosition[0] = Math.min(boardSize - 1, newPosition[0] + 1); break;
-      case 'left': newPosition[1] = Math.max(0, newPosition[1] - 1); break;
-      case 'right': newPosition[1] = Math.min(boardSize - 1, newPosition[1] + 1); break;
+    if (socket && socket.readyState === WebSocket.OPEN && !gameState.gameOver) {
+      socket.send(JSON.stringify({
+        type: 'MOVE',
+        player: gameState.currentPlayer,
+        direction
+      }));
     }
-
-    if (currentPlayer === 'red') {
-      setRedMousePosition(newPosition);
-    } else {
-      setBlueMousePosition(newPosition);
-    }
-
-    if (newPosition[0] === cheesePosition[0] && newPosition[1] === cheesePosition[1]) {
-      setGameOver(true);
-      setWinner(currentPlayer);
-    } else {
-      setCurrentPlayer(currentPlayer === 'red' ? 'blue' : 'red');
-    }
-  }, [currentPlayer, redMousePosition, blueMousePosition, cheesePosition, boardSize, gameOver, gameStarted]);
+  }, [socket, gameState.currentPlayer, gameState.gameOver]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -70,43 +81,30 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <h1 className="text-4xl font-bold mb-8">Two Mice, One Cheese</h1>
-      {!gameStarted ? (
-        <button 
-          className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          onClick={startGame}
-        >
-          Start Game
-        </button>
-      ) : (
-        <>
-          <GameBoard 
-            boardSize={boardSize} 
-            redMousePosition={redMousePosition}
-            blueMousePosition={blueMousePosition}
-            cheesePosition={cheesePosition}
-            currentPlayer={currentPlayer}
-          />
-          <StatusDisplay
-            redMousePosition={redMousePosition}
-            blueMousePosition={blueMousePosition}
-            cheesePosition={cheesePosition}
-            currentPlayer={currentPlayer}
-          />
-          <div className="mt-4 text-xl">
-            {gameOver 
-              ? `Game Over! ${winner?.toUpperCase()} mouse wins!` 
-              : `Current player: ${currentPlayer.toUpperCase()} mouse`}
-          </div>
-          {gameOver && (
-            <button 
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              onClick={startGame}
-            >
-              Play Again
-            </button>
-          )}
-        </>
-      )}
+      <button 
+        className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        onClick={startGame}
+      >
+        {gameState.gameOver ? 'Start New Game' : 'Restart Game'}
+      </button>
+      <GameBoard 
+        boardSize={5} 
+        redMousePosition={gameState.redMousePosition}
+        blueMousePosition={gameState.blueMousePosition}
+        cheesePosition={gameState.cheesePosition}
+        currentPlayer={gameState.currentPlayer}
+      />
+      <StatusDisplay
+        redMousePosition={gameState.redMousePosition}
+        blueMousePosition={gameState.blueMousePosition}
+        cheesePosition={gameState.cheesePosition}
+        currentPlayer={gameState.currentPlayer}
+      />
+      <div className="mt-4 text-xl">
+        {gameState.gameOver 
+          ? `Game Over! ${gameState.winner?.toUpperCase()} mouse wins!` 
+          : `Current player: ${gameState.currentPlayer.toUpperCase()} mouse`}
+      </div>
     </div>
   );
 };

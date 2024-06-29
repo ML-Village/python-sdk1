@@ -5,7 +5,7 @@ interface MouseProps {
 }
 
 const Mouse: React.FC<MouseProps> = ({ color }) => {
-  return <div className={`w-8 h-8 bg-${color}-500 rounded-full`}></div>;
+  return <div className={`w-8 h-8 bg-${color=="red"?"orange":"green"}-500 rounded-full`}></div>;
 };
 
 export default Mouse;
