@@ -13,15 +13,36 @@ interface GameState {
   currentPlayer: 'red' | 'blue';
   gameOver: boolean;
   winner: 'red' | 'blue' | null;
+  possibleMoves: string[];
 }
 
+function calculatePossibleMoves(position: [number, number]): string[] {
+  const [row, col] = position;
+  const moves: string[] = [];
+
+  if (row > 0) moves.push('up');
+  if (row < 4) moves.push('down');
+  if (col > 0) moves.push('left');
+  if (col < 4) moves.push('right');
+
+  return moves;
+}
+
+function getRandomPosition(): [number, number] {
+  return [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
+}
+
+const initialRedPosition: [number, number] = [0, 0];
+const initialBluePosition: [number, number] = [4, 4];
+
 let gameState: GameState = {
-  redMousePosition: [0, 0],
-  blueMousePosition: [4, 4],
-  cheesePosition: [2, 2],
+  redMousePosition: initialRedPosition,
+  blueMousePosition: initialBluePosition,
+  cheesePosition: getRandomPosition(),
   currentPlayer: 'red',
   gameOver: false,
-  winner: null
+  winner: null,
+  possibleMoves: calculatePossibleMoves(initialRedPosition)
 };
 
 wss.on('connection', (ws) => {
@@ -34,12 +55,13 @@ wss.on('connection', (ws) => {
     
     if (data.type === 'START_GAME') {
       gameState = {
-        redMousePosition: [0, 0],
-        blueMousePosition: [4, 4],
-        cheesePosition: [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)],
+        redMousePosition: initialRedPosition,
+        blueMousePosition: initialBluePosition,
+        cheesePosition: getRandomPosition(),
         currentPlayer: 'red',
         gameOver: false,
-        winner: null
+        winner: null,
+        possibleMoves: calculatePossibleMoves(initialRedPosition)
       };
     } else if (data.type === 'MOVE') {
       const { player, direction } = data;
@@ -63,8 +85,11 @@ wss.on('connection', (ws) => {
         if (newPosition[0] === gameState.cheesePosition[0] && newPosition[1] === gameState.cheesePosition[1]) {
           gameState.gameOver = true;
           gameState.winner = player;
+          gameState.possibleMoves = [];
         } else {
           gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'blue' : 'red';
+          const nextPosition = gameState.currentPlayer === 'red' ? gameState.redMousePosition : gameState.blueMousePosition;
+          gameState.possibleMoves = calculatePossibleMoves(nextPosition);
         }
       }
     }
@@ -82,6 +107,7 @@ function broadcastGameState() {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(stateJson);
+      console.log(stateJson);
     }
   });
 }

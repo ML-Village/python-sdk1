@@ -9,6 +9,7 @@ interface GameState {
   currentPlayer: 'red' | 'blue';
   gameOver: boolean;
   winner: 'red' | 'blue' | null;
+  possibleMoves: string[];
 }
 
 const App: React.FC = () => {
@@ -18,7 +19,8 @@ const App: React.FC = () => {
     cheesePosition: [2, 2],
     currentPlayer: 'red',
     gameOver: false,
-    winner: null
+    winner: null,
+    possibleMoves: []
   });
   const [socket, setSocket] = useState<WebSocket | null>(null);
 
@@ -33,7 +35,7 @@ const App: React.FC = () => {
       //console.log(event.data);
       const newGameState = JSON.parse(event.data);
       setGameState(newGameState);
-      // console.log(newGameState);
+      console.log(newGameState);
       // console.log(newGameState.redMousePosition);
     };
 
@@ -99,6 +101,7 @@ const App: React.FC = () => {
         blueMousePosition={gameState.blueMousePosition}
         cheesePosition={gameState.cheesePosition}
         currentPlayer={gameState.currentPlayer}
+        possibleMoves={gameState.possibleMoves}
       />
       <div className="mt-4 text-xl">
         {gameState.gameOver 
