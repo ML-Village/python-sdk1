@@ -10,6 +10,8 @@ interface GameState {
   gameOver: boolean;
   winner: 'red' | 'blue' | null;
   possibleMoves: string[];
+  gameTag: string; 
+  gameIntent: string;
 }
 
 const App: React.FC = () => {
@@ -20,7 +22,9 @@ const App: React.FC = () => {
     currentPlayer: 'red',
     gameOver: false,
     winner: null,
-    possibleMoves: []
+    possibleMoves: [],
+    gameTag: '8888',
+    gameIntent: "none"
   });
   const [socket, setSocket] = useState<WebSocket | null>(null);
 
@@ -102,6 +106,7 @@ const App: React.FC = () => {
         cheesePosition={gameState.cheesePosition}
         currentPlayer={gameState.currentPlayer}
         possibleMoves={gameState.possibleMoves}
+        gameTag={gameState.gameTag}
       />
       <div className="mt-4 text-xl">
         {gameState.gameOver 

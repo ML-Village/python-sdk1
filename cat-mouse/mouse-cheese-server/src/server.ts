@@ -14,6 +14,8 @@ interface GameState {
   gameOver: boolean;
   winner: 'red' | 'blue' | null;
   possibleMoves: string[];
+  gameTag: string; 
+  gameIntent: string;
 }
 
 function calculatePossibleMoves(position: [number, number]): string[] {
@@ -32,6 +34,10 @@ function getRandomPosition(): [number, number] {
   return [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
 }
 
+function generateGameTag(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
 const initialRedPosition: [number, number] = [0, 0];
 const initialBluePosition: [number, number] = [4, 4];
 
@@ -42,7 +48,9 @@ let gameState: GameState = {
   currentPlayer: 'red',
   gameOver: false,
   winner: null,
-  possibleMoves: calculatePossibleMoves(initialRedPosition)
+  possibleMoves: calculatePossibleMoves(initialRedPosition),
+  gameTag: generateGameTag(),
+  gameIntent: "none"
 };
 
 wss.on('connection', (ws) => {
@@ -52,6 +60,7 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message: string) => {
     const data = JSON.parse(message);
+    console.log(data);
     
     if (data.type === 'START_GAME') {
       gameState = {
@@ -61,7 +70,9 @@ wss.on('connection', (ws) => {
         currentPlayer: 'red',
         gameOver: false,
         winner: null,
-        possibleMoves: calculatePossibleMoves(initialRedPosition)
+        possibleMoves: calculatePossibleMoves(initialRedPosition),
+        gameTag: generateGameTag(),
+        gameIntent: "init"
       };
     } else if (data.type === 'MOVE') {
       const { player, direction } = data;
@@ -91,6 +102,7 @@ wss.on('connection', (ws) => {
           const nextPosition = gameState.currentPlayer === 'red' ? gameState.redMousePosition : gameState.blueMousePosition;
           gameState.possibleMoves = calculatePossibleMoves(nextPosition);
         }
+        gameState.gameIntent = "move";
       }
     }
 
@@ -107,6 +119,7 @@ function broadcastGameState() {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(stateJson);
+      console.log("game state broadcast...")
       console.log(stateJson);
     }
   });
